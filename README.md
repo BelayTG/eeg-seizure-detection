@@ -2,7 +2,7 @@
 
 Automated detection and classification of epileptiform discharges from hippocampal EEG recordings in a C9orf72 mouse model of ALS/FTD.
 
----
+\---
 
 ## The biological question
 
@@ -10,34 +10,37 @@ C9orf72 repeat expansions are the most common genetic cause of ALS and FTD. A ke
 
 This project applies signal processing and machine learning to hippocampal EEG recordings from wild-type (WT) and C9orf72-knockout (KO) mice to quantify and classify differences in epileptiform discharge patterns.
 
----
+\---
 
 ## What this project does
 
-| Step | Method | Output |
-|------|--------|--------|
-| Signal preprocessing | Artifact rejection, epoch extraction | Clean EEG epochs |
-| Discharge detection | Adaptive amplitude thresholding (2× baseline), prominence and width filtering | Events per recording |
-| Frequency analysis | Welch PSD, band power (delta → gamma) | PSD profiles per group |
-| Classification | Random Forest on discharge features + band power | WT vs KO genotype prediction |
-| Interpretation | Feature importance, Mann-Whitney U test | Biologically meaningful findings |
+|Step|Method|Output|
+|-|-|-|
+|Signal preprocessing|Artifact rejection, epoch extraction|Clean EEG epochs|
+|Discharge detection|Adaptive amplitude thresholding (2× baseline), prominence and width filtering|Events per recording|
+|Frequency analysis|Welch PSD, band power (delta → gamma)|PSD profiles per group|
+|Classification|Random Forest on discharge features + band power|WT vs KO genotype prediction|
+|Interpretation|Feature importance, Mann-Whitney U test|Biologically meaningful findings|
 
----
+\---
 
 ## Key results
 
-| Metric | WT | KO |
-|--------|----|----|
-| Mean discharge rate (events/min) | — | — |
-| Gamma band power (normalized) | — | — |
-| Classifier ROC-AUC | — | — |
-| Mann-Whitney p-value (discharge rate) | — | — |
+|Metric|WT|KO|
+|-|-|-|
+|Mean discharge rate (events/min)|11.3 ± 13.3|8.3 ± 7.4|
+|Beta band power — 3m (normalized)|0.129|0.131|
+|Beta band power — 6m (normalized)|0.105|0.113|
+|Beta band power — 12m (normalized)|0.203|0.559|
+|Gamma band power — 12m (normalized)|0.057|0.144|
+|Classifier ROC-AUC|0.850|—|
+|Mann-Whitney p-value (discharge rate)|ns (p=0.876)|—|
 
-> Fill this table after running `notebooks/02_results.ipynb` on your data.
 
-**Finding:** C9orf72-KO mice show significantly elevated seizure-associated discharge rates compared to WT controls. Gamma band power was the strongest classifier feature, consistent with high-frequency oscillation increases reported during ictal activity in ALS models.
 
----
+**Finding:** C9orf72-KO mice show progressive divergence in high-frequency EEG power across disease progression. Beta band power increases 2.75x in KO vs WT at 12 months (0.559 vs 0.203), with gamma power showing a 2.55x increase at the same timepoint. A Random Forest classifier trained on discharge features achieved ROC-AUC of 0.85, with discharge rate and event count as the most discriminative features.
+
+\--
 
 ## Repository structure
 
@@ -48,7 +51,7 @@ eeg-seizure-detection/
 │   ├── detection.py       # SAD detection, PSD, band power, batch processing
 │   └── classify.py        # Feature engineering, Random Forest, evaluation plots
 ├── notebooks/
-│   └── 02_results.ipynb   # Full analysis: traces, PSD, classifier, interpretation
+│   └── 02\\\_results.ipynb   # Full analysis: traces, PSD, classifier, interpretation
 ├── figures/               # Auto-generated output figures
 ├── data/
 │   ├── raw/               # ABF recordings (not tracked — see Data section below)
@@ -57,36 +60,43 @@ eeg-seizure-detection/
 └── README.md
 ```
 
----
+\---
 
 ## Figures
 
 ### EEG trace with detected discharges
-![EEG trace](figures/eeg_trace_example.png)
+
+!\[EEG trace](figures/eeg\_trace\_example.png)
 
 ### Discharge rate: WT vs KO
-![Discharge rate](figures/discharge_rate_wt_vs_ko.png)
+
+!\[Discharge rate](figures/discharge\_rate\_wt\_vs\_ko.png)
 
 ### Power spectral density
-![PSD](figures/psd_wt_vs_ko.png)
+
+!\[PSD](figures/psd\_wt\_vs\_ko.png)
 
 ### Classifier performance
-![ROC and PR curves](figures/roc_pr_curves.png)
+
+!\[ROC and PR curves](figures/roc\_pr\_curves.png)
 
 ### Feature importance
-![Feature importance](figures/feature_importance.png)
 
----
+!\[Feature importance](figures/feature\_importance.png)
+
+\---
 
 ## Reproducing this analysis
 
 **1. Clone the repo**
+
 ```bash
 git clone https://github.com/Belay-Gebregergis/eeg-seizure-detection.git
 cd eeg-seizure-detection
 ```
 
 **2. Create the environment**
+
 ```bash
 conda env create -f environment.yml
 conda activate eeg-seizure
@@ -95,52 +105,55 @@ conda activate eeg-seizure
 **3. Add your data**
 
 Place your `.abf` files in `data/raw/WT/` and `data/raw/KO/`.  
-Each folder needs a manifest Excel file with columns `File` and `Start_Times`.
+Each folder needs a manifest Excel file with columns `File` and `Start\\\_Times`.
 
 ```
 data/raw/WT/
-├── manifest_wt.xlsx
-├── recording_01.abf
-└── recording_02.abf
+├── manifest\\\_wt.xlsx
+├── recording\\\_01.abf
+└── recording\\\_02.abf
 ```
 
 **4. Run the notebook**
+
 ```bash
-jupyter notebook notebooks/02_results.ipynb
+jupyter notebook notebooks/02\\\_results.ipynb
 ```
 
----
+\---
 
 ## Data
 
 Raw `.abf` recordings are not included in this repository (file size).  
 The detection and classification pipeline is fully compatible with publicly available EEG datasets in ABF format, including recordings from the [IEEG Portal](https://www.ieeg.org) and [PhysioNet](https://physionet.org/about/database/).
 
----
+\---
 
 ## Methods
 
 **Discharge detection** uses four physiologically motivated criteria applied uniformly across genotypes:
-- Amplitude: 2× adaptive baseline threshold (97th percentile of 1-hour baseline window)
-- Prominence: minimum 0.2 mV above local signal
-- Width: maximum 200 ms (restricts to sharp epileptiform transients)
-- Refractory period: minimum 100 ms between events
 
-**Classification** uses a Random Forest with stratified 5-fold cross-validation. Features include discharge rate, mean amplitude, prominence, and normalized power in delta, theta, alpha, beta, and gamma bands. `class_weight="balanced"` handles unequal group sizes.
+* Amplitude: 2× adaptive baseline threshold (97th percentile of 1-hour baseline window)
+* Prominence: minimum 0.2 mV above local signal
+* Width: maximum 200 ms (restricts to sharp epileptiform transients)
+* Refractory period: minimum 100 ms between events
+
+**Classification** uses a Random Forest with stratified 5-fold cross-validation. Features include discharge rate, mean amplitude, prominence, and normalized power in delta, theta, alpha, beta, and gamma bands. `class\\\_weight="balanced"` handles unequal group sizes.
 
 **Statistics:** Group comparisons use the Mann-Whitney U test (two-sided), appropriate for non-normal distributions and small neuroscience sample sizes.
 
----
+\---
 
 ## Skills demonstrated
 
 `Python` `signal processing` `scikit-learn` `scipy` `EEG analysis` `pyabf`  
 `machine learning` `Random Forest` `ROC-AUC` `feature importance` `neuroscience`
 
----
+\---
 
 ## Author
 
 **Belay Gebregergis**  
 PhD in Neuroscience  
 [LinkedIn](https://linkedin.com/in/your-profile) · [Email](mailto:belay.gebregergis@gmail.com)
+

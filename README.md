@@ -1,159 +1,125 @@
-# EEG Seizure-Associated Discharge Detection
+# Automated Seizure Detection — C9orf72 Mouse Model of ALS/FTD
 
-Automated detection and classification of epileptiform discharges from hippocampal EEG recordings in a C9orf72 mouse model of ALS/FTD.
+Automated detection and quantification of seizures and interictal epileptiform discharges (IEDs) from 4-hour hippocampal EEG recordings following kainic acid injection in wild-type (WT) and C9orf72-knockout (KO) mice.
 
-\---
+---
 
 ## The biological question
 
-C9orf72 repeat expansions are the most common genetic cause of ALS and FTD. A key open question is whether C9orf72 loss of function drives **network hyperexcitability** — a measurable increase in seizure-associated neural activity that may precede neurodegeneration.
+Does C9orf72 loss increase acute seizure susceptibility following kainic acid challenge? C9orf72 repeat expansions cause ALS/FTD, and network hyperexcitability has been proposed as a pathomechanism. This project uses fully automated seizure detection to quantify seizure burden, IED rate, and seizure characteristics in WT vs KO mice.
 
-This project applies signal processing and machine learning to hippocampal EEG recordings from wild-type (WT) and C9orf72-knockout (KO) mice to quantify and classify differences in epileptiform discharge patterns.
+---
 
-\---
+## Recording structure
 
-## What this project does
+- 8 WT mice, 9 KO mice
+- Each mouse: 2 × 2h ABF recordings (consecutive files)
+- Channel 0: CA3 hippocampus
+- Files sorted alphabetically, paired sequentially per mouse
 
-|Step|Method|Output|
-|-|-|-|
-|Signal preprocessing|Artifact rejection, epoch extraction|Clean EEG epochs|
-|Discharge detection|Adaptive amplitude thresholding (2× baseline), prominence and width filtering|Events per recording|
-|Frequency analysis|Welch PSD, band power (delta → gamma)|PSD profiles per group|
-|Classification|Random Forest on discharge features + band power|WT vs KO genotype prediction|
-|Interpretation|Feature importance, Mann-Whitney U test|Biologically meaningful findings|
+---
 
-\---
+## Detection pipeline
+
+```
+1. Pair consecutive ABF files per mouse
+2. Concatenate into single 4h trace
+3. Artifact rejection (voltage range ±10 mV)
+4. Adaptive baseline estimation (97th percentile, 1h window)
+5. IED detection (amplitude > 2× baseline, width < 200ms)
+6. Seizure detection (sustained IED clusters > 5 seconds)
+7. Per-mouse metric computation
+```
+
+---
 
 ## Key results
 
-|Metric|WT|KO|
-|-|-|-|
-|Mean discharge rate (events/min)|11.3 ± 13.3|8.3 ± 7.4|
-|Beta band power — 3m (normalized)|0.129|0.131|
-|Beta band power — 6m (normalized)|0.105|0.113|
-|Beta band power — 12m (normalized)|0.203|0.559|
-|Gamma band power — 12m (normalized)|0.057|0.144|
-|Classifier ROC-AUC|0.850|—|
-|Mann-Whitney p-value (discharge rate)|ns (p=0.876)|—|
+| Metric | WT (n=8) | KO (n=9) | p-value | sig |
+|--------|----------|----------|---------|-----|
+| IED rate (events/min) | 11.4±4.6 | 5.6±1.6 | 0.529 | ns |
+| Seizure count | 55.5±22.7 | 20.9±5.5 | 0.465 | ns |
+| Seizure burden (%) | 6.3±2.6 | 2.1±0.5 | 0.592 | ns |
+| Mean seizure duration (s) | 9.4±3.1 | 11.4±2.6 | 0.808 | ns |
+| First seizure latency (min) | 3.4±1.4 | 10.3±4.3 | 0.149 | ns |
+| Mean IED interval (s) | 166.2±162.0 | 9.5±3.7 | 0.411 | ns |
 
+**Finding:** C9orf72-KO mice show no significant difference from WT in any measure of kainic acid-induced seizure activity at 4 months. This indicates that C9orf72 loss does not increase acute seizure susceptibility — network dysfunction in this model appears progressive rather than acute, consistent with longitudinal spectral findings showing theta power divergence at 3 and 12 months.
 
-
-**Finding:** C9orf72-KO mice show progressive divergence in high-frequency EEG power across disease progression. Beta band power increases 2.75x in KO vs WT at 12 months (0.559 vs 0.203), with gamma power showing a 2.55x increase at the same timepoint. A Random Forest classifier trained on discharge features achieved ROC-AUC of 0.85, with discharge rate and event count as the most discriminative features.
-
-\--
+---
 
 ## Repository structure
 
 ```
 eeg-seizure-detection/
 ├── src/
-│   ├── preprocessing.py   # ABF loading, artifact rejection, epoch extraction
-│   ├── detection.py       # SAD detection, PSD, band power, batch processing
-│   └── classify.py        # Feature engineering, Random Forest, evaluation plots
+│   ├── seizure_detection.py  # Full automated detection pipeline
+│   ├── preprocessing.py      # ABF loading, artifact rejection
+│   ├── detection.py          # Core peak detection algorithms
+│   ├── classify.py           # ML classifier utilities
+│   └── utils.py              # Shared paths and helpers
 ├── notebooks/
-│   └── 02\\\_results.ipynb   # Full analysis: traces, PSD, classifier, interpretation
-├── figures/               # Auto-generated output figures
-├── data/
-│   ├── raw/               # ABF recordings (not tracked — see Data section below)
-│   └── processed/         # Derived summaries
+│   └── 01_automated_seizure_detection.ipynb
+├── figures/
+├── data/processed/
 ├── environment.yml
 └── README.md
 ```
 
-\---
+---
 
 ## Figures
 
-### EEG trace with detected discharges
+### EEG trace with detected events
+![EEG example](figures/eeg_example_ko.png)
 
-!\[EEG trace](figures/eeg\_trace\_example.png)
+### All seizure metrics — WT vs KO
+![Metrics](figures/seizure_metrics_all.png)
 
-### Discharge rate: WT vs KO
+### Seizure timeline — when do seizures occur?
+![Timeline](figures/seizure_timeline.png)
 
-!\[Discharge rate](figures/discharge\_rate\_wt\_vs\_ko.png)
+### IED rate over time
+![IED over time](figures/ied_rate_over_time.png)
 
-### Power spectral density
-
-!\[PSD](figures/psd\_wt\_vs\_ko.png)
-
-### Classifier performance
-
-!\[ROC and PR curves](figures/roc\_pr\_curves.png)
-
-### Feature importance
-
-!\[Feature importance](figures/feature\_importance.png)
-
-\---
+---
 
 ## Reproducing this analysis
 
-**1. Clone the repo**
-
 ```bash
-git clone https://github.com/Belay-Gebregergis/eeg-seizure-detection.git
+git clone https://github.com/BelayTG/eeg-seizure-detection.git
 cd eeg-seizure-detection
-```
-
-**2. Create the environment**
-
-```bash
 conda env create -f environment.yml
 conda activate eeg-seizure
+jupyter notebook notebooks/01_automated_seizure_detection.ipynb
 ```
 
-**3. Add your data**
+Update `BASE` in `src/utils.py` to point to your local EEG data directory.
 
-Place your `.abf` files in `data/raw/WT/` and `data/raw/KO/`.  
-Each folder needs a manifest Excel file with columns `File` and `Start\\\_Times`.
-
-```
-data/raw/WT/
-├── manifest\\\_wt.xlsx
-├── recording\\\_01.abf
-└── recording\\\_02.abf
-```
-
-**4. Run the notebook**
-
-```bash
-jupyter notebook notebooks/02\\\_results.ipynb
-```
-
-\---
-
-## Data
-
-Raw `.abf` recordings are not included in this repository (file size).  
-The detection and classification pipeline is fully compatible with publicly available EEG datasets in ABF format, including recordings from the [IEEG Portal](https://www.ieeg.org) and [PhysioNet](https://physionet.org/about/database/).
-
-\---
+---
 
 ## Methods
 
-**Discharge detection** uses four physiologically motivated criteria applied uniformly across genotypes:
+**IED detection** uses adaptive amplitude thresholding: lower threshold = 2× the 97th percentile of the first-hour baseline window. Additional criteria: prominence ≥ 0.2 mV, width < 200 ms, refractory period 100 ms.
 
-* Amplitude: 2× adaptive baseline threshold (97th percentile of 1-hour baseline window)
-* Prominence: minimum 0.2 mV above local signal
-* Width: maximum 200 ms (restricts to sharp epileptiform transients)
-* Refractory period: minimum 100 ms between events
+**Seizure detection** clusters IEDs with inter-event gaps < 2 seconds into candidate seizures. Clusters with ≥ 5 IEDs and duration > 5 seconds are classified as seizures.
 
-**Classification** uses a Random Forest with stratified 5-fold cross-validation. Features include discharge rate, mean amplitude, prominence, and normalized power in delta, theta, alpha, beta, and gamma bands. `class\\\_weight="balanced"` handles unequal group sizes.
+**File pairing:** Two consecutive 2h ABF files are concatenated into a single 4h trace per mouse. Files are sorted alphabetically and paired sequentially.
 
-**Statistics:** Group comparisons use the Mann-Whitney U test (two-sided), appropriate for non-normal distributions and small neuroscience sample sizes.
+**Statistics:** Mann-Whitney U test (two-sided). Statistical unit = one mouse.
 
-\---
+---
 
 ## Skills demonstrated
 
-`Python` `signal processing` `scikit-learn` `scipy` `EEG analysis` `pyabf`  
-`machine learning` `Random Forest` `ROC-AUC` `feature importance` `neuroscience`
+`Python` `EEG analysis` `automated seizure detection` `pyabf` `scipy`  
+`peak detection` `event clustering` `longitudinal analysis` `matplotlib`
 
-\---
+---
 
 ## Author
 
 **Belay Gebregergis**  
 PhD in Neuroscience  
-[LinkedIn](https://linkedin.com/in/your-profile) · [Email](mailto:belay.gebregergis@gmail.com)
-
+[LinkedIn](https://linkedin.com/in/your-profile) · [Email](mailto:belay.gebregergis@gmail.com)  
+[GitHub](https://github.com/BelayTG)

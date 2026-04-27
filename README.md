@@ -154,5 +154,5 @@ Update `BASE` in `src/utils.py` to point to your local EEG data directory.
 
 **Belay Gebregergis**  
 PhD in Neuroscience  
-[LinkedIn](https://linkedin.com/in/your-profile) · [Email](mailto:belay.gebregergis@gmail.com)  
+[LinkedIn](https://www.linkedin.com/in/belay-gebregergis) · [Email](mailto:belay.gebregergis@gmail.com)  
 [GitHub](https://github.com/BelayTG)
